@@ -7,12 +7,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Properties;
 
+import javax.management.RuntimeErrorException;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.TargetDataLine;
 import javax.swing.JOptionPane;
 
 import threads.SendRequestThread;
+import threads.PeerResponseThread;
 import threads.ProcessServerResponseThread;
 import view.ClientGUI;
 
@@ -26,6 +38,17 @@ public class ClientController {
 	private static PrintStream outputStreamToServer;
 	private static BufferedReader inputStreamFromServer;
 	
+	private static String peerIp;
+	private static int peerPort;
+	
+	public static int myUDPPort;
+	public static AudioFormat format = new AudioFormat(8000.0f, 16, 1, true, true);
+//	private static AudioInputStream audioInputStream;
+    private static TargetDataLine microphone;
+    private static SourceDataLine speakers;
+    
+	private static DatagramSocket datagramSocket;
+    
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -81,7 +104,8 @@ public class ClientController {
 					if (inputStreamFromServer.readLine().trim().startsWith("Welcome"))
 						end = true;
 				}
-				
+				myUDPPort = findAvailablePort();				
+				outputStreamToServer.println(myUDPPort);
 				getClientsAndRefresh();
 			}// ako ne udje u IF nista se ne radi
 		} catch (IOException e) {
@@ -155,6 +179,82 @@ public class ClientController {
 		
 	}
 	
+	public static void beginChat() {
+		try {
+			datagramSocket = new DatagramSocket(myUDPPort);
+			
+			PeerResponseThread peerResponse = new PeerResponseThread();
+			peerResponse.start();
+			
+			microphone = AudioSystem.getTargetDataLine(format);
+
+            DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
+            microphone = (TargetDataLine) AudioSystem.getLine(info);
+            microphone.open(format);
+
+            int numBytesRead;
+            int bytesRead = 0;
+            
+            microphone.start();
+            
+			while (bytesRead < 100000) { 
+				byte[] dataForPeer = new byte[1024];
+				numBytesRead = microphone.read(dataForPeer, 0, 1024);
+				bytesRead = bytesRead + numBytesRead;
+
+//				System.out.println(bytesRead);
+//				out.write(data, 0, numBytesRead);
+																	//					//
+				DatagramPacket datagramPacket = new DatagramPacket(dataForPeer, dataForPeer.length, 
+						InetAddress.getByName(peerIp), peerPort);
+				sendOrRecievePacket(true, datagramPacket);
+			}
+			microphone.close();
+          
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
+	}
+	
+	public static synchronized DatagramPacket sendOrRecievePacket(boolean b, DatagramPacket packet) {
+		try {
+			if (b && packet != null) {
+				datagramSocket.send(packet);
+
+				return null;
+			} else {
+				datagramSocket.receive(packet);
+
+				return packet;
+			}
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+		}
+		return null;
+	}
+	
+	public static int findAvailablePort() {
+		ServerSocket socket = null;
+		try {
+			socket = new ServerSocket(0);
+			socket.setReuseAddress(true);
+			int port = socket.getLocalPort();
+			try {
+				socket.close();
+			} catch (IOException e) { }
+			
+			return port;
+		} catch (IOException e) { } 
+		finally {
+			if (socket != null) {
+				try {
+					socket.close();
+				} catch (IOException e) { }
+			}
+		}
+		throw new RuntimeException("Nije moguce pronaci port!");
+	}
+	
 	public static void closeServerConnectionRefreshGUI() {
 		clientGUI.closeServerConnection();
 	}
@@ -170,4 +270,19 @@ public class ClientController {
 		return socketForComunnication;
 	}
 
+	public static String getPeerIp() {
+		return peerIp;
+	}
+
+	public static void setPeerIp(String peerIp) {
+		ClientController.peerIp = peerIp;
+	}
+
+	public static int getPeerPort() {
+		return peerPort;
+	}
+
+	public static void setPeerPort(int peerPort) {
+		ClientController.peerPort = peerPort;
+	}
 }

@@ -3,6 +3,7 @@ package threads;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.InetAddress;
 
 import javax.swing.JOptionPane;
 
@@ -31,24 +32,40 @@ public class ProcessServerResponseThread extends Thread{
 				} else if(answer.equals("Goodbye!")) {
 					ClientController.closeServerConnection();
 					ClientController.closeServerConnectionRefreshGUI();
-				} else if (!answer.startsWith("conn: yes") && !answer.startsWith("conn: no") ) {
-					int i = JOptionPane.showConfirmDialog(null,
-							"Da li zelite da prihvatite zahtev korisnika "
-									+ answer.substring(answer.indexOf(':') + 1, answer.length()) + " za chat?",
-									"Zahtev za povezivanjem", JOptionPane.YES_NO_OPTION);
+				} else if (answer.endsWith("Accept?") ) {
+//					int i = JOptionPane.showConfirmDialog(null,                   promeniti na srpski
+//							"Da li zelite da prihvatite zahtev korisnika "
+//									+ answer.substring(answer.indexOf(':') + 1, answer.length()) + " za chat?",
+//									"Zahtev za povezivanjem", JOptionPane.YES_NO_OPTION);
+					int i = JOptionPane.showConfirmDialog(null, answer.trim(),
+							"Zahtev za povezivanjem", JOptionPane.YES_NO_OPTION);
 					if (i == 0) {
-						outputStreamToServer.println("conn: yes");
-						String s = inputStreamFromServer.readLine();
+//						outputStreamToServer.println("conn: yes");
+						outputStreamToServer.println("yes");
+						String ipAndPort = inputStreamFromServer.readLine().trim();
+						
+						String ip = ipAndPort.substring(ipAndPort.indexOf("/")+1, ipAndPort.lastIndexOf("/"));
+						int port = Integer.parseInt(ipAndPort.substring(ipAndPort.lastIndexOf("/")+1));
+						ClientController.setPeerIp(ip);
+						ClientController.setPeerPort(port);
+						
 						ClientController.showChatPanel();	// POZIVIVANJE NOVOG PANELA
+						ClientController.beginChat();
 						break;
 					} else {
-						outputStreamToServer.println("conn: no");
+						outputStreamToServer.println("no");
 					}
 				} else if (answer.startsWith("conn")) {
-					if (answer.substring(answer.indexOf(':') + 2, answer.length()).equals("yes")) {
+					if (answer.startsWith("conn: yes")) {
+						String ip = answer.substring(answer.indexOf("/")+2, answer.lastIndexOf("/"));
+						int port = Integer.parseInt(answer.substring(answer.lastIndexOf("/")+1, answer.length()));
+						ClientController.setPeerIp(ip);
+						ClientController.setPeerPort(port);
+						
 						ClientController.showChatPanel();	// POZIVIVANJE NOVOG PANELA
+						ClientController.beginChat();
 						break;
-					} else if (answer.substring(answer.indexOf(':') + 2, answer.length()).equals("no")) {
+					} else if (answer.equals("conn: no")) {
 						JOptionPane.showMessageDialog(null, "Zahtev za chat nije prihvacen!", 
 								"Odbijanje zahteva", JOptionPane.INFORMATION_MESSAGE);
 					}
@@ -60,4 +77,5 @@ public class ProcessServerResponseThread extends Thread{
 			System.out.println(e.getMessage());
 		}
 	}
+	
 }

@@ -157,7 +157,7 @@ public class ClientGUI extends JFrame {
 			btnZapocniChat = new JButton("Zapocni chat");
 			btnZapocniChat.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					String selectedUser = list.getSelectedValue().toString();
+					String selectedUser = list.getSelectedValue().toString().trim();
 					ClientController.sendRequest(selectedUser);
 				}
 			});
@@ -242,6 +242,7 @@ public class ClientGUI extends JFrame {
 		panel.setVisible(false);
 		btnZapocniChat.setVisible(false);
 		btnPrekiniVezu.setVisible(false);
+		btnOsvezi.setVisible(false);
 		chatPanel.setVisible(true);
 	}
 	public void refreshOnlineClients(String[] clients) {
