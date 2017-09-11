@@ -115,9 +115,17 @@ public class ClientGUI extends JFrame {
 				public void valueChanged(ListSelectionEvent event) {
 					if (!event.getValueIsAdjusting() && ClientController.indicator == false){
 			            JList source = (JList)event.getSource();
-			            String selected = source.getSelectedValue().toString();
-			            if(!selected.equals(""))
-			            	getBtnZapocniChat().setVisible(true);
+			            Object selected = source.getSelectedValue();
+			            if(selected != null) {
+			            	selected = (String) selected;
+			            
+			            	if(!selected.equals("")) {
+						           // if(selected != null && !selected.equals(""))
+						      getBtnZapocniChat().setVisible(true);
+			            	}
+			            }
+			            	
+			            
 			        }
 					if(ClientController.indicator == true)
 						ClientController.indicator = false;

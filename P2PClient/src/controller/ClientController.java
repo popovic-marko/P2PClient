@@ -63,8 +63,8 @@ public class ClientController {
 	}
 	
 	public static void createConnection() throws Exception {
-		String[] data = loadIpAndPort();
-		socketForComunnication = new Socket(data[0], Integer.parseInt(data[1]));
+		//String[] data = loadIpAndPort();
+		socketForComunnication = new Socket("192.168.43.163", 2222);
 		
 		outputStreamToServer = new PrintStream(socketForComunnication.getOutputStream());
 		inputStreamFromServer = new BufferedReader(
@@ -196,20 +196,23 @@ public class ClientController {
             int bytesRead = 0;
             
             microphone.start();
-            
-			while (bytesRead < 100000) { 
+            //IZMENA 
+			while (true) { 
 				byte[] dataForPeer = new byte[1024];
 				numBytesRead = microphone.read(dataForPeer, 0, 1024);
 				bytesRead = bytesRead + numBytesRead;
-
+				System.out.println("ULAZAK MIKROFON");
+				System.out.println(InetAddress.getByName(peerIp));
+				System.out.println(peerPort);
 //				System.out.println(bytesRead);
 //				out.write(data, 0, numBytesRead);
 																	//					//
 				DatagramPacket datagramPacket = new DatagramPacket(dataForPeer, dataForPeer.length, 
 						InetAddress.getByName(peerIp), peerPort);
 				sendOrRecievePacket(true, datagramPacket);
+				
 			}
-			microphone.close();
+			//microphone.close();
           
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
@@ -219,10 +222,12 @@ public class ClientController {
 	public static synchronized DatagramPacket sendOrRecievePacket(boolean b, DatagramPacket packet) {
 		try {
 			if (b && packet != null) {
+				datagramSocket.setSoTimeout(1000);
 				datagramSocket.send(packet);
-
+				
 				return null;
 			} else {
+				datagramSocket.setSoTimeout(1000);
 				datagramSocket.receive(packet);
 
 				return packet;

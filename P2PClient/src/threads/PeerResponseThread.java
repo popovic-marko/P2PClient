@@ -47,6 +47,7 @@ public class PeerResponseThread extends Thread{
 						// the data line where it will be
 						// delivered to the speaker.
 						speakers.write(tempBuffer, 0, cnt);
+						System.out.println("ULAZAK ZVUCNICI");
 					} // end if
 				} 
 			}
