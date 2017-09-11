@@ -234,8 +234,8 @@ public class ClientController {
 			}
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
+			return packet;
 		}
-		return null;
 	}
 	
 	public static int findAvailablePort() {
