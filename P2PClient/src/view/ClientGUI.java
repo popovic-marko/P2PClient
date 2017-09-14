@@ -1,24 +1,23 @@
 package view;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+
+import javax.swing.AbstractListModel;
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import controller.ClientController;
-
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.AbstractListModel;
-import javax.swing.JScrollPane;
-import javax.swing.JButton;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.IOException;
-import java.awt.event.ActionEvent;
 
 public class ClientGUI extends JFrame {
 
@@ -45,10 +44,13 @@ public class ClientGUI extends JFrame {
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-				// prekinuti konekciju ako je aktivna, nije zavrseno
-				ClientController.getOutputStreamFromServer().println("end");
-				ClientController.closeServerConnection();
-				
+				if (ClientController.CHAT_STATUS == true) {
+					ClientController.closePeerConnection();
+				}
+				if (ClientController.getOutputStreamFromServer() != null) {
+					ClientController.getOutputStreamFromServer().println("end");
+					ClientController.closeServerConnection();
+				}
 				System.exit(0);
 			}
 		});
@@ -64,6 +66,7 @@ public class ClientGUI extends JFrame {
 		contentPane.add(getChatPanel()).setVisible(false);
 		contentPane.add(getBtnOsvezi()).setVisible(false);
 	}
+
 	private JPanel getPanel() {
 		if (panel == null) {
 			panel = new JPanel();
@@ -74,6 +77,7 @@ public class ClientGUI extends JFrame {
 		}
 		return panel;
 	}
+
 	private JLabel getLblListaDostupnihKlijenata() {
 		if (lblListaDostupnihKlijenata == null) {
 			lblListaDostupnihKlijenata = new JLabel("Lista dostupnih klijenata");
@@ -81,6 +85,7 @@ public class ClientGUI extends JFrame {
 		}
 		return lblListaDostupnihKlijenata;
 	}
+
 	private JPanel getPanelScroll() {
 		if (panelScroll == null) {
 			panelScroll = new JPanel();
@@ -90,6 +95,7 @@ public class ClientGUI extends JFrame {
 		}
 		return panelScroll;
 	}
+
 	private JScrollPane getScrollPane() {
 		if (scrollPane == null) {
 			scrollPane = new JScrollPane();
@@ -98,14 +104,17 @@ public class ClientGUI extends JFrame {
 		}
 		return scrollPane;
 	}
+
 	private JList getList_1() {
 		if (list == null) {
 			list = new JList();
 			list.setModel(new AbstractListModel() {
-				String[] values = new String[] {""};
+				String[] values = new String[] { "" };
+
 				public int getSize() {
 					return values.length;
 				}
+
 				public Object getElementAt(int index) {
 					return values[index];
 				}
@@ -113,53 +122,52 @@ public class ClientGUI extends JFrame {
 			list.addListSelectionListener(new ListSelectionListener() {
 				@Override
 				public void valueChanged(ListSelectionEvent event) {
-					if (!event.getValueIsAdjusting() && ClientController.indicator == false){
-			            JList source = (JList)event.getSource();
-			            Object selected = source.getSelectedValue();
-			            if(selected != null) {
-			            	selected = (String) selected;
-			            
-			            	if(!selected.equals("")) {
-						           // if(selected != null && !selected.equals(""))
-						      getBtnZapocniChat().setVisible(true);
-			            	}
-			            }
-			            	
-			            
-			        }
-					if(ClientController.indicator == true)
+					if (!event.getValueIsAdjusting() && ClientController.indicator == false) {
+						JList source = (JList) event.getSource();
+						Object selected = source.getSelectedValue();
+						if (selected != null) {
+							selected = (String) selected;
+
+							if (!selected.equals("")) {
+								getBtnZapocniChat().setVisible(true);
+							}
+						}
+
+					}
+					if (ClientController.indicator == true)
 						ClientController.indicator = false;
 				}
 			});
 		}
 		return list;
 	}
+
 	private JButton getBtnPoveziSe() {
 		if (btnPoveziSe == null) {
 			btnPoveziSe = new JButton("Povezi se na server");
 			btnPoveziSe.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					try {
-	//					String username = ClientController.openDialogForUsername();
-					//	ClientController.createConnection();	
-						ClientController.createConnection();				// SAMO POD KOM. ZBOG TESTA
-						ClientController.sendUsernameAndGetOnlineClients();
-						getPanel().setVisible(true);
-						getBtnPoveziSe().setVisible(false);
-						getBtnPrekiniVezu().setVisible(true);
-						getBtnOsvezi().setVisible(true);
-						ClientController.startServerResponseThread();
+						ClientController.createConnection();
+						boolean b = ClientController.sendUsernameAndGetOnlineClients();
+						if (b) {
+							getPanel().setVisible(true);
+							getBtnPoveziSe().setVisible(false);
+							getBtnPrekiniVezu().setVisible(true);
+							getBtnOsvezi().setVisible(true);
+							ClientController.startServerResponseThread();
+						}
 					} catch (Exception e1) {
-						JOptionPane.showMessageDialog(null, e1.getMessage(), 
-								"Greska", JOptionPane.ERROR_MESSAGE);
-					} 			
+						JOptionPane.showMessageDialog(null, e1.getMessage(), "Greska", JOptionPane.ERROR_MESSAGE);
+					}
 				}
 			});
-			
+
 			btnPoveziSe.setBounds(203, 413, 148, 31);
 		}
 		return btnPoveziSe;
 	}
+
 	private JButton getBtnZapocniChat() {
 		if (btnZapocniChat == null) {
 			btnZapocniChat = new JButton("Zapocni chat");
@@ -173,41 +181,20 @@ public class ClientGUI extends JFrame {
 		}
 		return btnZapocniChat;
 	}
+
 	private JButton getBtnPrekiniVezu() {
 		if (btnPrekiniVezu == null) {
 			btnPrekiniVezu = new JButton("Prekini vezu sa serverom");
 			btnPrekiniVezu.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-//					try {
-						ClientController.getOutputStreamFromServer().println("end");
-//						if(ClientController.getInputStreamFromServer().readLine()
-//								.trim().equals("Goodbye!")) {
-//							
-//							ClientController.getOutputStreamFromServer().close();
-//							ClientController.getInputStreamFromServer().close();
-//							ClientController.getSocketForComunnication().close();
-//							
-//							panel.setVisible(false);
-//							btnPrekiniVezu.setVisible(false);
-//							btnZapocniChat.setVisible(false);
-//							btnOsvezi.setVisible(false);
-//							btnPoveziSe.setVisible(true);
-//						} else {
-//							throw new Exception("Greska prilikom prekidanja veze!");
-//						}
-//						
-//					} catch (Exception e1) {
-//						//System.out.println(e1.getMessage());
-//						JOptionPane.showMessageDialog(null, e1.getMessage(), 
-//								"Greska", JOptionPane.ERROR_MESSAGE);
-//					}
+					ClientController.getOutputStreamFromServer().println("end");
 				}
 			});
 			btnPrekiniVezu.setBounds(192, 420, 180, 31);
 		}
 		return btnPrekiniVezu;
 	}
-	
+
 	private JPanel getChatPanel() {
 		if (chatPanel == null) {
 			chatPanel = new JPanel();
@@ -217,10 +204,18 @@ public class ClientGUI extends JFrame {
 		}
 		return chatPanel;
 	}
-	
+
 	private JButton getPrekiniChat() {
 		if (btnPrekiniChat == null) {
 			btnPrekiniChat = new JButton("Prekini chat");
+			btnPrekiniChat.setVisible(true);
+			btnPrekiniChat.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					ClientController.closePeerConnection();
+					ClientController.showBeginComponent();
+				}
+			});
 			btnPrekiniChat.setBounds(126, 146, 109, 30);
 		}
 		return btnPrekiniChat;
@@ -233,19 +228,13 @@ public class ClientGUI extends JFrame {
 				public void actionPerformed(ActionEvent e) {
 					ClientController.sendRequestForRefresh();
 					ClientController.indicator = true;
-					// trebalo bi da se vrati lista koja ce biti postavljena na model
-//					try {
-//						ClientController.getClientsAndRefresh();
-//					} catch (IOException e1) {
-//						System.out.println(e1.getMessage());
-//					}
 				}
 			});
 			btnOsvezi.setBounds(80, 310, 89, 27);
 		}
 		return btnOsvezi;
 	}
-	
+
 	public void showChatPanel() {
 		panel.setVisible(false);
 		btnZapocniChat.setVisible(false);
@@ -253,11 +242,10 @@ public class ClientGUI extends JFrame {
 		btnOsvezi.setVisible(false);
 		chatPanel.setVisible(true);
 	}
+
 	public void refreshOnlineClients(String[] clients) {
-		// postaviti vrednosti u listu
 		if (!clients[0].trim().equals("null")) {
 			getList_1().setModel(new AbstractListModel() {
-				// String[] values = (clients == null ? new String[] {""} : clients);
 				String[] values = clients;
 
 				public int getSize() {
@@ -279,4 +267,8 @@ public class ClientGUI extends JFrame {
 		btnPoveziSe.setVisible(true);
 	}
 
+	public void showBeginComponent() {
+		chatPanel.setVisible(false);
+		btnPoveziSe.setVisible(true);
+	}
 }
